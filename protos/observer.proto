@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package protos;
+
+option go_package = "systemiq.ai/protos";
+
+// Define the gRPC service
+service DataObserver {
+    rpc ObserveData (ObservationRequest) returns (ObservationResponse);
+}
+
+// Request message format
+message ObservationRequest {
+    repeated string data = 1;        // JSON-encoded data strings
+    string indicator = 2;            // Indicator to classify the data type or context
+    optional int32 element_id = 3;   // Unique identifier for the element
+    optional string token = 4;       // JWT token for authentication
+    optional string action = 5;      // Optional action parameter
+}
+
+// Response message format
+message ObservationResponse {
+    string status = 1; // Response status (e.g., "success", "error")
+}

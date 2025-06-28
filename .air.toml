@@ -1,0 +1,49 @@
+# Working directory
+root = "."
+tmp_dir = "tmp"
+
+[build]
+# Command to build the application
+cmd = "go build -o ./tmp/main ."
+# Binary file output by `cmd`
+bin = "tmp/main"
+# Customize binary run with environment variables
+full_bin = "APP_ENV=dev ./tmp/main"
+# File extensions to watch for changes
+include_ext = ["go"]
+# Directories to ignore
+exclude_dir = ["tmp", "vendor"]
+# Exclude test files
+exclude_regex = ["_test\\.go"]
+# Ignore unchanged files for optimized performance
+exclude_unchanged = true
+# Delay after each change detection before rebuilding (default to 0 ms)
+delay = 0
+# Stop the old binary on build errors
+stop_on_error = true
+# Kill delay after sending Interrupt signal
+kill_delay = 500
+
+[log]
+# Show log time
+time = false
+# Only show main log (silences watcher, build, runner)
+main_only = false
+# Silence all logs produced by Air 
+silent = false
+
+[color]
+# Customize log colors for each section
+main = "magenta"
+watcher = "cyan"
+build = "yellow"
+runner = "green"
+
+[misc]
+# Delete temporary files on exit
+clean_on_exit = true
+
+[screen]
+# Clear screen on rebuild
+clear_on_rebuild = true
+keep_scroll = true
