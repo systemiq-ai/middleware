@@ -82,6 +82,25 @@ docker run --rm \
   observer-middleware
 ```
 
+## Docker Package
+
+You can pull the latest multi-arch image from GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/systemiq-ai/middleware:latest
+```
+
+To use it directly:
+
+```bash
+docker run --rm \
+  -e AUTH_EMAIL="$AUTH_EMAIL" \
+  -e AUTH_PASSWORD="$AUTH_PASSWORD" \
+  -e AUTH_CLIENT_ID="$AUTH_CLIENT_ID" \
+  -p 50051:50051 \
+  ghcr.io/systemiq-ai/middleware:latest
+```
+
 ## License
 
 MIT
