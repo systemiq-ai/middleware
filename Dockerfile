@@ -1,6 +1,10 @@
 # Use the official Golang Alpine image as the base
 FROM golang:1.24-alpine
 
+LABEL org.opencontainers.image.source="https://github.com/systemiq-ai/middleware" \
+      org.opencontainers.image.description="Systemiq Middleware Service" \
+      org.opencontainers.image.licenses="MIT"
+      
 # Set the working directory
 WORKDIR /app
 
