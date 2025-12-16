@@ -52,6 +52,7 @@ func dialObserver(endpoint string) (*grpc.ClientConn, protos.DataObserverClient,
 
 	conn, err := grpc.NewClient(endpoint, opts...)
 	if err != nil {
+		log.Printf("ERROR failed to dial Observer endpoint %s: %v", endpoint, err)
 		return nil, nil, err
 	}
 	return conn, protos.NewDataObserverClient(conn), nil
@@ -78,6 +79,7 @@ func (s *ObserverMiddlewareServer) ObserveData(
 	// Fresh JWT each call
 	token, err := s.authHandler.GetToken()
 	if err != nil {
+		log.Printf("ERROR failed to retrieve auth token for ObserveData request: %v", err)
 		return nil, err
 	}
 	req.Token = &token
@@ -111,20 +113,20 @@ func main() {
 	/* ---------- auth ---------- */
 	authHandler, err := auth.NewAuthHandler()
 	if err != nil {
-		log.Fatalf("auth init: %v", err)
+		log.Fatalf("ERROR failed to initialize auth handler during startup: %v", err)
 	}
 
 	/* ---------- dial Observer once ---------- */
 	conn, client, err := dialObserver(endpoint)
 	if err != nil {
-		log.Fatalf("dial Observer: %v", err)
+		log.Fatalf("ERROR failed to dial Observer endpoint during startup: %v", err)
 	}
 	defer conn.Close()
 
 	/* ---------- start local gRPC server ---------- */
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Fatalf("listen: %v", err)
+		log.Fatalf("ERROR failed to bind gRPC server to port 50051 during startup: %v", err)
 	}
 	grpcServer := grpc.NewServer(
 		grpc.MaxRecvMsgSize(maxMsg),
@@ -138,6 +140,6 @@ func main() {
 
 	log.Println("ObserverMiddleware gRPC server is listening on port 50051...")
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("serve: %v", err)
+		log.Fatalf("ERROR gRPC server terminated unexpectedly during runtime: %v", err)
 	}
 }

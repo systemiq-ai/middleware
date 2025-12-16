@@ -41,18 +41,18 @@ func init() {
 
 	clientIDStr := os.Getenv("AUTH_CLIENT_ID")
 	if clientIDStr == "" {
-		log.Fatal("AUTH_CLIENT_ID is not set")
+		log.Fatal("ERROR AUTH_CLIENT_ID is not set")
 	}
 
 	var err error
 	authClientID, err = strconv.Atoi(clientIDStr)
 	if err != nil || authClientID == 0 {
-		log.Fatal("AUTH_CLIENT_ID must be a valid integer")
+		log.Fatal("ERROR AUTH_CLIENT_ID must be a valid integer")
 	}
 
 	// Check other required environment variables
 	if authLoginEndpoint == "" || authRefreshEndpoint == "" || authEmail == "" || authPassword == "" {
-		log.Fatal("One or more required environment variables are missing")
+		log.Fatal("ERROR One or more required environment variables are missing")
 	}
 }
 
@@ -95,6 +95,7 @@ func NewAuthHandler() (*AuthHandler, error) {
 		stopChan: make(chan struct{}),
 	}
 	if err := handler.Login(); err != nil {
+		log.Printf("ERROR initial login failed during auth handler creation: %v", err)
 		return nil, err
 	}
 
@@ -116,9 +117,9 @@ func (a *AuthHandler) startRefresher() {
 			if time.Until(expiryUTC) < 5*time.Minute { // Refresh if token expires within 5 minutes
 				log.Println("Token nearing expiration, refreshing...")
 				if err := a.RefreshToken(); err != nil {
-					log.Printf("Failed to refresh token: %v", err)
+					log.Printf("ERROR failed to refresh token: %v", err)
 					if loginErr := a.Login(); loginErr != nil {
-						log.Printf("Failed to re-login: %v", loginErr)
+						log.Printf("ERROR failed to re-login: %v", loginErr)
 					}
 				}
 			}
@@ -138,27 +139,32 @@ func (a *AuthHandler) Login() error {
 	}
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
+		log.Printf("ERROR failed to marshal login payload: %v", err)
 		return err
 	}
 
 	req, err := http.NewRequest("POST", authLoginEndpoint, bytes.NewBuffer(payloadBytes))
 	if err != nil {
+		log.Printf("ERROR failed to create login request: %v", err)
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := a.client.Do(req)
 	if err != nil {
+		log.Printf("ERROR login request failed: %v", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("ERROR failed to authenticate: %v", resp.Status)
 		return errors.New("failed to authenticate: " + resp.Status)
 	}
 
 	var loginResponse LoginResponse
 	if err := json.NewDecoder(resp.Body).Decode(&loginResponse); err != nil {
+		log.Printf("ERROR failed to decode login response: %v", err)
 		return err
 	}
 
@@ -171,6 +177,7 @@ func (a *AuthHandler) Login() error {
 	}
 
 	if foundClient == nil {
+		log.Print("ERROR client_id not found in login response")
 		return errors.New("client_id not found in login response")
 	}
 
@@ -181,6 +188,7 @@ func (a *AuthHandler) Login() error {
 	a.refreshToken = foundClient.RefreshToken
 	a.expiry, err = parseTokenExpiry(a.accessToken)
 	if err != nil {
+		log.Printf("ERROR failed to parse access token expiry from login response: %v", err)
 		return err
 	}
 
@@ -195,6 +203,7 @@ func (a *AuthHandler) RefreshToken() error {
 	a.mu.Unlock()
 
 	if refreshToken == "" {
+		log.Print("ERROR no refresh token available")
 		return errors.New("no refresh token available")
 	}
 
@@ -203,31 +212,37 @@ func (a *AuthHandler) RefreshToken() error {
 	}
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
+		log.Printf("ERROR failed to marshal refresh token payload: %v", err)
 		return err
 	}
 
 	req, err := http.NewRequest("POST", authRefreshEndpoint, bytes.NewBuffer(payloadBytes))
 	if err != nil {
+		log.Printf("ERROR failed to create refresh token request: %v", err)
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := a.client.Do(req)
 	if err != nil {
+		log.Printf("ERROR refresh token request failed: %v", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("ERROR refresh token request returned non-200 status: %v", resp.Status)
 		return errors.New("failed to refresh token: " + resp.Status)
 	}
 
 	var tokenResponse TokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
+		log.Printf("ERROR failed to decode refresh token response: %v", err)
 		return err
 	}
 
 	if tokenResponse.ClientID != authClientID {
+		log.Print("ERROR client_id mismatch in refresh response")
 		return errors.New("client_id mismatch in refresh response")
 	}
 
@@ -238,6 +253,7 @@ func (a *AuthHandler) RefreshToken() error {
 	a.refreshToken = tokenResponse.RefreshToken
 	a.expiry, err = parseTokenExpiry(a.accessToken)
 	if err != nil {
+		log.Printf("ERROR failed to parse access token expiry from refreshed token: %v", err)
 		return err
 	}
 
@@ -255,8 +271,9 @@ func (a *AuthHandler) GetToken() (string, error) {
 	if time.Now().UTC().After(expiryUTC) {
 		log.Println("Access token expired, refreshing...")
 		if err := a.RefreshToken(); err != nil {
-			log.Println("Failed to refresh token, logging in again...")
+			log.Println("ERROR Failed to refresh token, logging in again...")
 			if err := a.Login(); err != nil {
+				log.Printf("ERROR failed to re-login after refresh token failure")
 				return "", err
 			}
 		}
@@ -278,6 +295,7 @@ func (a *AuthHandler) StopRefresher() {
 func parseTokenExpiry(tokenString string) (time.Time, error) {
 	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
 	if err != nil {
+		log.Printf("ERROR failed to parse JWT token without verification: %v", err)
 		return time.Time{}, err
 	}
 
@@ -286,6 +304,6 @@ func parseTokenExpiry(tokenString string) (time.Time, error) {
 			return time.Unix(int64(exp), 0).UTC(), nil
 		}
 	}
-
+	log.Printf("ERROR expiration claim 'exp' not found")
 	return time.Time{}, errors.New("expiration claim 'exp' not found")
 }
