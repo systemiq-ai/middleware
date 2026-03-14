@@ -77,7 +77,7 @@ docker build -t observer-middleware .
 
 ```bash
 docker run --rm \
-  -e AUTH_EMAIL="$AUTH_EMAIL" \
+  -e AUTH_USERNAME="$AUTH_USERNAME" \
   -e AUTH_PASSWORD="$AUTH_PASSWORD" \
   -e AUTH_CLIENT_ID="$AUTH_CLIENT_ID" \
   -p 50051:50051 \
