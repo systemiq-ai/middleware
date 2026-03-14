@@ -138,7 +138,7 @@ func main() {
 		authHandler: authHandler,
 	})
 
-	log.Println("ObserverMiddleware gRPC server is listening on port 50051...")
+	log.Println("INIT ObserverMiddleware gRPC server is listening on port 50051...")
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("ERROR gRPC server terminated unexpectedly during runtime: %v", err)
 	}

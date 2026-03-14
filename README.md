@@ -39,7 +39,7 @@ Publisher (local) ──► Middleware  :50051 ──► Observer  :443
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `AUTH_EMAIL` | IAM user email | `middleware@systemiq.ai` |
+| `AUTH_USERNAME` | IAM user email | `middleware@systemiq.ai` |
 | `AUTH_PASSWORD` | Password for the IAM user | `supersecret` |
 | `AUTH_CLIENT_ID` | Client ID issued by IAM | `2` |
 | `AUTH_LOGIN_ENDPOINT` | *(optional)* override login URL | `https://api.systemiq.ai/auth/login` |

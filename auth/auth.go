@@ -19,7 +19,7 @@ import (
 var (
 	authLoginEndpoint   string
 	authRefreshEndpoint string
-	authEmail           string
+	authUsername        string
 	authPassword        string
 	authClientID        int
 )
@@ -36,7 +36,7 @@ func init() {
 		authRefreshEndpoint = "https://api.systemiq.ai/auth/refresh-token" // Default value
 	}
 
-	authEmail = os.Getenv("AUTH_EMAIL")
+	authUsername = os.Getenv("AUTH_USERNAME")
 	authPassword = os.Getenv("AUTH_PASSWORD")
 
 	clientIDStr := os.Getenv("AUTH_CLIENT_ID")
@@ -51,7 +51,7 @@ func init() {
 	}
 
 	// Check other required environment variables
-	if authLoginEndpoint == "" || authRefreshEndpoint == "" || authEmail == "" || authPassword == "" {
+	if authLoginEndpoint == "" || authRefreshEndpoint == "" || authUsername == "" || authPassword == "" {
 		log.Fatal("ERROR One or more required environment variables are missing")
 	}
 }
@@ -133,7 +133,7 @@ func (a *AuthHandler) startRefresher() {
 // Login authenticates with the server and retrieves the access and refresh tokens
 func (a *AuthHandler) Login() error {
 	payload := map[string]string{
-		"email":     authEmail,
+		"email":     authUsername,
 		"password":  authPassword,
 		"client_id": fmt.Sprintf("%d", authClientID),
 	}
