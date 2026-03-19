@@ -2,6 +2,7 @@ package auth
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,6 +21,7 @@ import (
 var (
 	authLoginEndpoint   string
 	authRefreshEndpoint string
+	authToken           string
 	authUsername        string
 	authPassword        string
 	authClientID        int
@@ -36,24 +39,45 @@ func init() {
 		authRefreshEndpoint = "https://api.systemiq.ai/auth/refresh-token" // Default value
 	}
 
-	authUsername = os.Getenv("AUTH_USERNAME")
-	authPassword = os.Getenv("AUTH_PASSWORD")
-
-	clientIDStr := os.Getenv("AUTH_CLIENT_ID")
-	if clientIDStr == "" {
-		log.Fatal("ERROR AUTH_CLIENT_ID is not set")
+	authToken = os.Getenv("AUTH_TOKEN")
+	if authToken == "" {
+		log.Fatal("ERROR AUTH_TOKEN is not set")
 	}
 
 	var err error
-	authClientID, err = strconv.Atoi(clientIDStr)
-	if err != nil || authClientID == 0 {
-		log.Fatal("ERROR AUTH_CLIENT_ID must be a valid integer")
+	authClientID, authUsername, authPassword, err = decodeBasicAuthToken(authToken)
+	if err != nil {
+		log.Fatalf("ERROR AUTH_TOKEN is invalid: %v", err)
 	}
 
 	// Check other required environment variables
-	if authLoginEndpoint == "" || authRefreshEndpoint == "" || authUsername == "" || authPassword == "" {
+	if authLoginEndpoint == "" || authRefreshEndpoint == "" {
 		log.Fatal("ERROR One or more required environment variables are missing")
 	}
+}
+
+func decodeBasicAuthToken(token string) (int, string, string, error) {
+	normalizedToken := token
+	if rem := len(normalizedToken) % 4; rem != 0 {
+		normalizedToken += strings.Repeat("=", 4-rem)
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(normalizedToken)
+	if err != nil {
+		return 0, "", "", err
+	}
+
+	parts := strings.SplitN(string(decoded), ":", 3)
+	if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
+		return 0, "", "", errors.New("expected base64-encoded client_id:username:password")
+	}
+
+	clientID, err := strconv.Atoi(parts[0])
+	if err != nil || clientID == 0 {
+		return 0, "", "", errors.New("client_id must be a valid integer")
+	}
+
+	return clientID, parts[1], parts[2], nil
 }
 
 // TokenResponse represents the structure of the login response

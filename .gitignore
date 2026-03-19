@@ -1,2 +1,6 @@
 # Mac OS X files
 .DS_Store
+
+# Binaries for programs and plugins
+__pycache__
+tmp

@@ -39,9 +39,7 @@ Publisher (local) ──► Middleware  :50051 ──► Observer  :443
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `AUTH_USERNAME` | IAM user email | `middleware@systemiq.ai` |
-| `AUTH_PASSWORD` | Password for the IAM user | `supersecret` |
-| `AUTH_CLIENT_ID` | Client ID issued by IAM | `2` |
+| `AUTH_TOKEN` | Base64-encoded `client_id:username:password` auth token; trailing `=` padding may be omitted | `MjptaWRkbGV3YXJlQHN5c3RlbWlxLmFpOnN1cGVyc2VjcmV0` |
 | `AUTH_LOGIN_ENDPOINT` | *(optional)* override login URL | `https://api.systemiq.ai/auth/login` |
 | `AUTH_REFRESH_ENDPOINT` | *(optional)* token-refresh URL | `https://api.systemiq.ai/auth/refresh-token` |
 | `OBSERVER_ENDPOINT` | *(optional)* gRPC target (defaults to `observer.systemiq.ai:443`) | `localhost:50052` |
@@ -77,9 +75,7 @@ docker build -t observer-middleware .
 
 ```bash
 docker run --rm \
-  -e AUTH_USERNAME="$AUTH_USERNAME" \
-  -e AUTH_PASSWORD="$AUTH_PASSWORD" \
-  -e AUTH_CLIENT_ID="$AUTH_CLIENT_ID" \
+  -e AUTH_TOKEN="$AUTH_TOKEN" \
   -p 50051:50051 \
   observer-middleware
 ```
