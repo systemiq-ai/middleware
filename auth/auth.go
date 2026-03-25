@@ -22,6 +22,7 @@ var (
 	authLoginEndpoint   string
 	authRefreshEndpoint string
 	authToken           string
+	authTokenSecretPath string
 	authUsername        string
 	authPassword        string
 	authClientID        int
@@ -40,11 +41,15 @@ func init() {
 	}
 
 	authToken = os.Getenv("AUTH_TOKEN")
-	if authToken == "" {
-		log.Fatal("ERROR AUTH_TOKEN is not set")
+	authTokenSecretPath = os.Getenv("AUTH_TOKEN_SECRET_PATH")
+
+	resolvedToken, err := resolveAuthToken(authToken, authTokenSecretPath)
+	if err != nil {
+		log.Fatalf("ERROR %v", err)
 	}
 
-	var err error
+	authToken = resolvedToken
+
 	authClientID, authUsername, authPassword, err = decodeBasicAuthToken(authToken)
 	if err != nil {
 		log.Fatalf("ERROR AUTH_TOKEN is invalid: %v", err)
@@ -54,6 +59,28 @@ func init() {
 	if authLoginEndpoint == "" || authRefreshEndpoint == "" {
 		log.Fatal("ERROR One or more required environment variables are missing")
 	}
+}
+
+func resolveAuthToken(token string, secretPath string) (string, error) {
+	if token != "" {
+		return strings.TrimSpace(token), nil
+	}
+
+	if secretPath == "" {
+		return "", errors.New("set AUTH_TOKEN or AUTH_TOKEN_SECRET_PATH")
+	}
+
+	secretBytes, err := os.ReadFile(secretPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read AUTH_TOKEN_SECRET_PATH: %w", err)
+	}
+
+	resolvedToken := strings.TrimSpace(string(secretBytes))
+	if resolvedToken == "" {
+		return "", errors.New("AUTH_TOKEN_SECRET_PATH points to an empty secret")
+	}
+
+	return resolvedToken, nil
 }
 
 func decodeBasicAuthToken(token string) (int, string, string, error) {

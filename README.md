@@ -39,7 +39,8 @@ Publisher (local) ──► Middleware  :50051 ──► Observer  :443
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `AUTH_TOKEN` | Base64-encoded `client_id:username:password` auth token; trailing `=` padding may be omitted | `MjptaWRkbGV3YXJlQHN5c3RlbWlxLmFpOnN1cGVyc2VjcmV0` |
+| `AUTH_TOKEN` | Base64-encoded `client_id:username:password` auth token; trailing `=` padding may be omitted; takes precedence over secret path when both are set | `MjptaWRkbGV3YXJlQHN5c3RlbWlxLmFpOnN1cGVyc2VjcmV0` |
+| `AUTH_TOKEN_SECRET_PATH` | *(optional)* file path to a secret containing the same auth token value | `/var/run/secrets/auth_token` |
 | `AUTH_LOGIN_ENDPOINT` | *(optional)* override login URL | `https://api.systemiq.ai/auth/login` |
 | `AUTH_REFRESH_ENDPOINT` | *(optional)* token-refresh URL | `https://api.systemiq.ai/auth/refresh-token` |
 | `OBSERVER_ENDPOINT` | *(optional)* gRPC target (defaults to `observer.systemiq.ai:443`) | `localhost:50052` |
@@ -76,6 +77,16 @@ docker build -t observer-middleware .
 ```bash
 docker run --rm \
   -e AUTH_TOKEN="$AUTH_TOKEN" \
+  -p 50051:50051 \
+  observer-middleware
+```
+
+Or mount the token as a secret file:
+
+```bash
+docker run --rm \
+  -e AUTH_TOKEN_SECRET_PATH="/run/secrets/auth_token" \
+  -v "/path/to/auth_token:/run/secrets/auth_token:ro" \
   -p 50051:50051 \
   observer-middleware
 ```
